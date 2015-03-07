@@ -68,6 +68,18 @@ enum Opcodes {
     STD = 0x1F,
 }
 
+enum SpecialOpcodes {
+    JSR = 0x01,
+    INT = 0x08,
+    IAG = 0x09,
+    IAS = 0x0A,
+    RFI = 0x0B,
+    IAQ = 0x0C,
+    HWN = 0x10,
+    HWQ = 0x11,
+    HWI = 0x12,
+}
+
 struct RegisterSet {
     a: u16,
     b: u16,
