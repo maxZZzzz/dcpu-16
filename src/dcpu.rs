@@ -1,4 +1,3 @@
-
 use self::core::num::FromPrimitive;
 
 extern crate core;
@@ -247,13 +246,6 @@ impl DCPU {
         (instruction, param_a, param_b)
     }
 
-    fn ex_op_set(&mut self, param_a : u16, param_b : u16) {
-        debug!("ex_op_set");
-        let value_a = self.get_by_operator(param_a);
-
-        self.set_by_operator(param_b, value_a);
-    }
-
     fn process_next_instruction(&mut self) -> bool {
         let (instruction, param_a, param_b) = self.fetch_instruction();
 
@@ -266,11 +258,99 @@ impl DCPU {
 
             _ => match opcode.unwrap() {
                 Opcode::SET => self.ex_op_set(param_a, param_b),
+                Opcode::ADD => self.ex_op_add(param_a, param_b),
+                Opcode::SUB => self.ex_op_sub(param_a, param_b),
+                Opcode::MUL => self.ex_op_mul(param_a, param_b),
+                Opcode::MLI => self.ex_op_mli(param_a, param_b),
+                Opcode::DIV => self.ex_op_div(param_a, param_b),
+                Opcode::DVI => self.ex_op_dvi(param_a, param_b),
                 _ => return false,
             },
         }
 
         true
+    }
+
+    fn ex_op_set(&mut self, param_a : u16, param_b : u16) {
+        debug!("ex_op_set");
+        let value_a = self.get_by_operator(param_a);
+
+        self.set_by_operator(param_b, value_a);
+    }
+
+    fn ex_op_add(&mut self, param_a : u16, param_b : u16) {
+        debug!("ex_op_set");
+        let value_a = self.get_by_operator(param_a) as u32;
+        let value_b = self.get_by_operator(param_b) as u32;
+
+        let result = value_b + value_a;
+        let ex = ((result & 0xFFFF0000) > 0) as u16;
+
+        self.special_register[2] = ex;
+
+        self.set_by_operator(param_b, (result & 0xFFFF) as u16);
+    }
+
+    //FIXME: that is probably wrong
+    fn ex_op_sub(&mut self, param_a : u16, param_b : u16) {
+        debug!("ex_op_set");
+        let value_a = self.get_by_operator(param_a) as u32;
+        let value_b = self.get_by_operator(param_b) as u32;
+
+        let result = value_b - value_a;
+        let ex = ((result & 0xFFFF0000) > 0) as u16;
+
+        self.special_register[2] = ex;
+
+        self.set_by_operator(param_b, (result & 0xFFFF) as u16);
+    }
+
+    fn ex_op_mul(&mut self, param_a : u16, param_b : u16) {
+        debug!("ex_op_set");
+        let value_a = self.get_by_operator(param_a) as u32;
+        let value_b = self.get_by_operator(param_b) as u32;
+
+        let result = value_b * value_a;
+        let ex = ((result >> 16) & 0xFFFF) as u16;
+
+        self.special_register[2] = ex;
+        self.set_by_operator(param_b, result as u16);
+    }
+
+    fn ex_op_mli(&mut self, param_a : u16, param_b : u16) {
+        debug!("ex_op_set");
+        let value_a = self.get_by_operator(param_a) as i32;
+        let value_b = self.get_by_operator(param_b) as i32;
+
+        let result = value_b * value_a;
+        let ex = ((result >> 16) & 0xFFFF) as u16;
+
+        self.special_register[2] = ex;
+        self.set_by_operator(param_b, (result & 0xFFFF) as u16);
+    }
+
+    fn ex_op_div(&mut self, param_a : u16, param_b : u16) {
+        debug!("ex_op_set");
+        let value_a = self.get_by_operator(param_a) as u32;
+        let value_b = self.get_by_operator(param_b) as u32;
+
+        let result = value_b / value_a;
+        let ex = (((value_b << 16) / value_a) & 0xFFFF) as u16;
+
+        self.special_register[2] = ex;
+        self.set_by_operator(param_b, (result & 0xFFFF) as u16);
+    }
+
+    fn ex_op_dvi(&mut self, param_a : u16, param_b : u16) {
+        debug!("ex_op_set");
+        let value_a = self.get_by_operator(param_a) as u32;
+        let value_b = self.get_by_operator(param_b) as u32;
+
+        let result = value_b / value_a;
+        let ex = (((value_b << 16) / value_a) & 0xFFFF) as u16;
+
+        self.special_register[2] = ex;
+        self.set_by_operator(param_b, (result & 0xFFFF) as u16);
     }
 
 
@@ -294,11 +374,63 @@ impl DCPU {
 #[test]
 fn test_cup() {
     let mut cpu = DCPU::new();
+    let result_start = 0x1000u16;
+    let mut pc = 0;
 
-    cpu.ram[0] = DCPU::create_instruction(Opcode::SET as u16, Operator::NW as u16, Operator::RA as u16);
-    cpu.ram[1] = 100;
 
+    // SET RA
+    cpu.ram[pc] = DCPU::create_instruction(Opcode::SET as u16, Operator::NW as u16, Operator::RA as u16);
+    pc += 1;
+    cpu.ram[pc] = 100;
+    pc += 1;
     cpu.cycle();
+    println!("RA = {}, RB = {}", cpu.register[0], cpu.register[1]);
+    assert!(
+        100 == cpu.register[0] && 
+        0 == cpu.register[1],
+        "RA = {}, RB = {}", 
+        cpu.register[0],
+        cpu.register[1]
+    );
 
-    assert!(cpu.register[0] == 100, "expected 100 got {}", cpu.register[0]);
+    // SET RB
+    cpu.ram[pc] = DCPU::create_instruction(Opcode::SET as u16, Operator::NW as u16, Operator::RB as u16);
+    pc += 1;
+    cpu.ram[pc] = 100;
+    pc += 1;
+    cpu.cycle();
+    println!("RA = {}, RB = {}", cpu.register[0], cpu.register[1]);
+    assert!(
+        100 == cpu.register[0] && 
+        100 == cpu.register[1],
+        "RA = {}, RB = {}", 
+        cpu.register[0],
+        cpu.register[1]
+    );
+
+    // ADD RB RA
+    cpu.ram[pc] = DCPU::create_instruction(Opcode::ADD as u16, Operator::RA as u16, Operator::RB as u16);
+    pc += 1;
+    cpu.cycle();
+    println!("RA = {}, RB = {}", cpu.register[0], cpu.register[1]);
+    assert!(
+        100 == cpu.register[0] && 
+        200 == cpu.register[1],
+        "RA = {}, RB = {}", 
+        cpu.register[0],
+        cpu.register[1]
+    );
+
+    // SUB RB RA
+    cpu.ram[pc] = DCPU::create_instruction(Opcode::SUB as u16, Operator::RA as u16, Operator::RB as u16);
+    pc += 1;
+    cpu.cycle();
+    println!("RA = {}, RB = {}", cpu.register[0], cpu.register[1]);
+    assert!(
+        100 == cpu.register[0] && 
+        100 == cpu.register[1],
+        "RA = {}, RB = {}", 
+        cpu.register[0],
+        cpu.register[1]
+    );
 }
