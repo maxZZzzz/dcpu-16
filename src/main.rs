@@ -36,14 +36,14 @@ enum Operator {
     MW_RI = 0x16,
     MW_RJ = 0x17,
 
-    PUSH_POP = 0x18,
-
+    MC_SP = 0x18,
     M_SP = 0x19,
     MW_SP = 0x1A,
 
     SP = 0x1B,
     PC = 0x1C,
     EX = 0x1D,
+
     MW = 0x1E,
     NW = 0x1F,
 }
