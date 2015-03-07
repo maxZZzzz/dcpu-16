@@ -3,3 +3,6 @@
 name = "dcpu-emu"
 version = "0.0.1"
 authors = ["maxZZzzz"]
+
+[dependencies]
+log = "0.2"

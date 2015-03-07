@@ -1,4 +1,14 @@
-enum Operators {
+#![feature(core)]
+extern crate core;
+
+#[macro_use]
+extern crate log;
+
+use core::num::FromPrimitive;
+
+#[derive(FromPrimitive)]
+#[repr(u16)]
+enum Operator {
     RA = 0x00,
     RB = 0x01,
     RC = 0x02,
@@ -38,7 +48,9 @@ enum Operators {
     NW = 0x1F,
 }
 
-enum Opcodes {
+#[derive(FromPrimitive)]
+#[repr(u16)]
+enum Opcode {
     SET = 0x01,
     ADD = 0x02,
     SUB = 0x03,
@@ -68,7 +80,9 @@ enum Opcodes {
     STD = 0x1F,
 }
 
-enum SpecialOpcodes {
+#[derive(FromPrimitive)]
+#[repr(u16)]
+enum SpecialOpcode {
     JSR = 0x01,
     INT = 0x08,
     IAG = 0x09,
@@ -80,6 +94,7 @@ enum SpecialOpcodes {
     HWI = 0x12,
 }
 
+/*
 struct RegisterSet {
     a: u16,
     b: u16,
@@ -92,53 +107,131 @@ struct RegisterSet {
 }
 
 struct PointerRegisterSet {
-   pc: u16,
    sp: u16,
+   pc: u16,
    ex: u16,
    ia: u16,
 }
-
-struct EmulationData {
-    cycle: u16
-}
+*/
 
 struct DCPU {
-   register: RegisterSet,
-   pointer: PointerRegisterSet,
+   register: [u16; 8],
+   special_register: [u16; 4],
    ram: [u16; 0x10000],
 
-   emulationData: EmulationData,
+   cycle: u16,
 }
 
 impl DCPU {
     fn new() -> DCPU {
         DCPU {
-            register: RegisterSet {
-                a: 0,
-                b: 0,
-                c: 0,
-                x: 0,
-                y: 0,
-                z: 0,
-                i: 0,
-                j: 0,
-            },
-            pointer: PointerRegisterSet {
-                pc: 0,
-                sp: 0,
-                ex: 0,
-                ia: 0,
-            },
+            register: [0u16; 8],
+            special_register: [0u16; 4],
             ram: [0u16; 0x10000],
-            emulationData: EmulationData {
-                cycle: 0
-            }
+            cycle: 0,
         }
     }
 
+    fn get_by_operator(&mut self, operator : u16) -> u16 {
+
+        debug!("get_by_operaotr {}", operator);
+
+        if operator < 0x08 {
+            return self.register[operator as usize];
+        } else if operator < 0x10 {
+            let index = operator & 0b111;
+            let ptr = self.register[index as usize];
+
+            return self.ram[ptr as usize];
+        } else if operator < 0x18 {
+            let index = operator & 0b111;
+            let word = self.fetch_word();
+            let ptr = self.register[index as usize] + word;
+
+            return self.ram[ptr as usize];
+        } else if operator == 0x18 {
+            let sp = self.special_register[0];
+            self.special_register[0] = sp - 1;
+
+            return self.ram[sp as usize];
+        } else if operator == 0x19 {
+            let sp = self.special_register[0];
+
+            return self.ram[sp as usize];
+        } else if operator == 0x1a {
+            let word = self.fetch_word();
+            let ptr = self.special_register[0] + word;
+
+            return self.ram[ptr as usize];
+        } else if operator == 0x1b {
+            return self.special_register[0];
+        } else if operator == 0x1c {
+            return self.special_register[1];
+        } else if operator == 0x1d {
+            return self.special_register[2];
+        } else if operator == 0x1e {
+            let ptr = self.fetch_word();
+
+            return self.ram[ptr as usize];
+        } else if operator == 0x1f {
+            return self.fetch_word();
+        } 
+
+        return operator
+    }
+
+    fn set_by_operator(&mut self, operator : u16, value : u16) {
+
+        debug!("set_by_operaotr {} = {}", operator, value);
+
+        if operator < 0x08 {
+            self.register[operator as usize] = value;
+        } else if operator < 0x10 {
+            let index = operator & 0b111;
+            let ptr = self.register[index as usize];
+
+            self.ram[ptr as usize] = value;
+        } else if operator < 0x18 {
+            let index = operator & 0b111;
+            let word = self.fetch_word();
+            let ptr = self.register[index as usize] + word;
+
+            self.ram[ptr as usize] = value;
+        } else if operator == 0x18 {
+            let sp = self.special_register[0];
+            self.special_register[0] = sp + 1;
+
+            self.ram[sp as usize] = value;
+        } else if operator == 0x19 {
+            let sp = self.special_register[0];
+
+            self.ram[sp as usize] = value;
+        } else if operator == 0x1a {
+            let word = self.fetch_word();
+            let ptr = self.special_register[0] + word;
+
+            self.ram[ptr as usize] = value;
+        } else if operator == 0x1b {
+            self.special_register[0] = value;
+        } else if operator == 0x1c {
+            self.special_register[1] = value;
+        } else if operator == 0x1d {
+            self.special_register[2] = value;
+        } else if operator == 0x1e {
+            let ptr = self.fetch_word();
+
+            self.ram[ptr as usize] = value;
+        } else if operator == 0x1f {
+            let ptr = self.special_register[1] + 1;
+
+            self.ram[ptr as usize] = value;
+        } 
+    }
+
     fn fetch_word(&mut self) -> u16 {
-        let result = self.ram[self.pointer.pc as usize];
-        self.pointer.pc += 1;
+        let pc = self.special_register[1];
+        let result = self.ram[pc as usize];
+        self.special_register[1] = pc + 1;
 
         result
     }
@@ -146,29 +239,68 @@ impl DCPU {
     fn fetch_instruction(&mut self) -> (u16, u16, u16) {
         let word = self.fetch_word();
 
+        debug!("fetched word {}", word);
+
         let instruction = word & 0b11111;
         let param_b = (word >> 5) & 0b11111;
-        let param_a = (word >> 5) & 0b111111;
+        let param_a = (word >> (5 + 6)) & 0b111111;
 
         (instruction, param_a, param_b)
     }
 
-    fn process_next_instruction(&mut self) {
+    fn ex_op_set(&mut self, param_a : u16, param_b : u16) {
+        debug!("ex_op_set");
+        let value_a = self.get_by_operator(param_a);
+
+        self.set_by_operator(param_b, value_a);
+    }
+
+    fn process_next_instruction(&mut self) -> bool {
         let (instruction, param_a, param_b) = self.fetch_instruction();
+
+        debug!("current instruction is {} : {}, {}", instruction, param_a, param_b);
+
+        let opcode = Opcode::from_u16(instruction);
+
+        match opcode {
+            Option::None => return false,
+
+            _ => match opcode.unwrap() {
+                Opcode::SET => self.ex_op_set(param_a, param_b),
+                _ => return false,
+            },
+        }
+
+        true
     }
 
 
     fn cycle(&mut self) {
-        if (self.emulationData.cycle > 0) {
-            self.emulationData.cycle -= 1;
+        if self.cycle > 0 {
+            self.cycle -= 1;
         } else {
             self.process_next_instruction();
         }
+    }
+
+    fn create_instruction(opcode : u16, param_a : u16, param_b : u16) -> u16 {
+        debug!("creating instruction for {} : {}, {}", opcode, param_a, param_b);
+
+        (opcode & 0b11111)
+        + ((param_b & 0b11111) << 5) 
+        + ((param_a & 0b111111) << (5 + 6))
     }
 }
 
 fn main() {
     let mut cpu = DCPU::new();
 
+    cpu.ram[0] = DCPU::create_instruction(Opcode::SET as u16, Operator::NW as u16, Operator::RA as u16);
+    cpu.ram[1] = 100;
+
+    println!("RA = {}", cpu.register[0]);
+
     cpu.cycle();
+
+    println!("RA = {}", cpu.register[0]);
 }
