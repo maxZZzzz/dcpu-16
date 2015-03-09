@@ -353,7 +353,6 @@ impl DCPU {
         self.set_by_operator(param_b, (result & 0xFFFF) as u16);
     }
 
-
     pub fn cycle(&mut self) {
         if self.cycle > 0 {
             self.cycle -= 1;
@@ -369,68 +368,155 @@ impl DCPU {
         + ((param_b & 0b11111) << 5) 
         + ((param_a & 0b111111) << (5 + 6))
     }
+
+    pub fn print_cpu_status(&self) {
+        println!("RA = {}", self.register[0]);
+        println!("RB = {}", self.register[1]);
+        println!("RC = {}", self.register[2]);
+        println!("RX = {}", self.register[3]);
+        println!("RY = {}", self.register[4]);
+        println!("RZ = {}", self.register[5]);
+        println!("RI = {}", self.register[6]);
+        println!("RJ = {}", self.register[7]);
+
+        println!("");
+
+        println!("SP = {}", self.special_register[0]);
+        println!("PC = {}", self.special_register[1]);
+        println!("EX = {}", self.special_register[2]);
+        println!("IA = {}", self.special_register[3]);
+
+        println!("CYCLES = {}", self.cycle);
+    }
+}
+
+fn test_set_for_operator<F>(op : Operator, test : F) where F : Fn(&mut DCPU) {
+    let mut cpu = DCPU::new();
+    let mut pc = 0;
+
+    // SET RA
+    cpu.ram[pc] = DCPU::create_instruction(Opcode::SET as u16, Operator::NW as u16, op as u16);
+    pc += 1;
+    cpu.ram[pc] = 0xFFFF;
+    //pc += 1;
+    cpu.cycle();
+
+    cpu.print_cpu_status();
+
+    test(&mut cpu);
 }
 
 #[test]
-fn test_cup() {
+fn test_op_set() {
+
+    test_set_for_operator(
+        Operator::RA,
+        |cpu| assert!(
+            0xFFFF == cpu.register[0],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::RB,
+        |cpu| assert!(
+            0xFFFF == cpu.register[1],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::RC,
+        |cpu| assert!(
+            0xFFFF == cpu.register[2],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::RX,
+        |cpu| assert!(
+            0xFFFF == cpu.register[3],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::RY,
+        |cpu| assert!(
+            0xFFFF == cpu.register[4],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::RZ,
+        |cpu| assert!(
+            0xFFFF == cpu.register[5],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::RI,
+        |cpu| assert!(
+            0xFFFF == cpu.register[6],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::RJ,
+        |cpu| assert!(
+            0xFFFF == cpu.register[7],
+            "assert failed"
+        )
+    );
+}
+
+#[test]
+fn test_cpu() {
     let mut cpu = DCPU::new();
-    let result_start = 0x1000u16;
     let mut pc = 0;
 
-
-    // SET RA
-    cpu.ram[pc] = DCPU::create_instruction(Opcode::SET as u16, Operator::NW as u16, Operator::RA as u16);
-    pc += 1;
-    cpu.ram[pc] = 100;
-    pc += 1;
-    cpu.cycle();
-    println!("RA = {}, RB = {}", cpu.register[0], cpu.register[1]);
-    assert!(
-        100 == cpu.register[0] && 
-        0 == cpu.register[1],
-        "RA = {}, RB = {}", 
-        cpu.register[0],
-        cpu.register[1]
-    );
-
     // SET RB
-    cpu.ram[pc] = DCPU::create_instruction(Opcode::SET as u16, Operator::NW as u16, Operator::RB as u16);
-    pc += 1;
-    cpu.ram[pc] = 100;
-    pc += 1;
-    cpu.cycle();
-    println!("RA = {}, RB = {}", cpu.register[0], cpu.register[1]);
-    assert!(
-        100 == cpu.register[0] && 
-        100 == cpu.register[1],
-        "RA = {}, RB = {}", 
-        cpu.register[0],
-        cpu.register[1]
-    );
-
-    // ADD RB RA
-    cpu.ram[pc] = DCPU::create_instruction(Opcode::ADD as u16, Operator::RA as u16, Operator::RB as u16);
-    pc += 1;
-    cpu.cycle();
-    println!("RA = {}, RB = {}", cpu.register[0], cpu.register[1]);
-    assert!(
-        100 == cpu.register[0] && 
-        200 == cpu.register[1],
-        "RA = {}, RB = {}", 
-        cpu.register[0],
-        cpu.register[1]
-    );
-
-    // SUB RB RA
-    cpu.ram[pc] = DCPU::create_instruction(Opcode::SUB as u16, Operator::RA as u16, Operator::RB as u16);
-    pc += 1;
-    cpu.cycle();
-    println!("RA = {}, RB = {}", cpu.register[0], cpu.register[1]);
-    assert!(
-        100 == cpu.register[0] && 
-        100 == cpu.register[1],
-        "RA = {}, RB = {}", 
-        cpu.register[0],
-        cpu.register[1]
-    );
+//    cpu.ram[pc] = DCPU::create_instruction(Opcode::SET as u16, Operator::NW as u16, Operator::RB as u16);
+//    pc += 1;
+//    cpu.ram[pc] = 100;
+//    pc += 1;
+//    cpu.cycle();
+//    println!("RA = {}, RB = {}", cpu.register[0], cpu.register[1]);
+//    assert!(
+//        100 == cpu.register[0] && 
+//        100 == cpu.register[1],
+//        "RA = {}, RB = {}", 
+//        cpu.register[0],
+//        cpu.register[1]
+//    );
+//
+//    // ADD RB RA
+//    cpu.ram[pc] = DCPU::create_instruction(Opcode::ADD as u16, Operator::RA as u16, Operator::RB as u16);
+//    pc += 1;
+//    cpu.cycle();
+//    println!("RA = {}, RB = {}", cpu.register[0], cpu.register[1]);
+//    assert!(
+//        100 == cpu.register[0] && 
+//        200 == cpu.register[1],
+//        "RA = {}, RB = {}", 
+//        cpu.register[0],
+//        cpu.register[1]
+//    );
+//
+//    // SUB RB RA
+//    cpu.ram[pc] = DCPU::create_instruction(Opcode::SUB as u16, Operator::RA as u16, Operator::RB as u16);
+//    pc += 1;
+//    cpu.cycle();
+//    println!("RA = {}, RB = {}", cpu.register[0], cpu.register[1]);
+//    assert!(
+//        100 == cpu.register[0] && 
+//        100 == cpu.register[1],
+//        "RA = {}, RB = {}", 
+//        cpu.register[0],
+//        cpu.register[1]
+//    );
 }
