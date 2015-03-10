@@ -398,7 +398,8 @@ fn test_set_for_operator<F>(op : Operator, test : F) where F : Fn(&mut DCPU) {
     cpu.ram[pc] = DCPU::create_instruction(Opcode::SET as u16, Operator::NW as u16, op as u16);
     pc += 1;
     cpu.ram[pc] = 0xFFFF;
-    //pc += 1;
+    pc += 1;
+    cpu.ram[pc] = 0xFFFF;
     cpu.cycle();
 
     cpu.print_cpu_status();
@@ -469,6 +470,139 @@ fn test_op_set() {
         Operator::RJ,
         |cpu| assert!(
             0xFFFF == cpu.register[7],
+            "assert failed"
+        )
+    );
+
+    // ==== PTR SET ====
+
+
+    test_set_for_operator(
+        Operator::M_RA,
+        |cpu| assert!(
+            0xFFFF == cpu.ram[0],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::M_RB,
+        |cpu| assert!(
+            0xFFFF == cpu.ram[0],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::M_RC,
+        |cpu| assert!(
+            0xFFFF == cpu.ram[0],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::M_RX,
+        |cpu| assert!(
+            0xFFFF == cpu.ram[0],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::M_RY,
+        |cpu| assert!(
+            0xFFFF == cpu.ram[0],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::M_RZ,
+        |cpu| assert!(
+            0xFFFF == cpu.ram[0],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::M_RI,
+        |cpu| assert!(
+            0xFFFF == cpu.ram[0],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::M_RJ,
+        |cpu| assert!(
+            0xFFFF == cpu.ram[0],
+            "assert failed"
+        )
+    );
+
+    // ==== OFFSET PTR SET ====
+
+    test_set_for_operator(
+        Operator::MW_RA,
+        |cpu| assert!(
+            0xFFFF == cpu.ram[0xFFFF],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::MW_RB,
+        |cpu| assert!(
+            0xFFFF == cpu.ram[0xFFFF],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::MW_RC,
+        |cpu| assert!(
+            0xFFFF == cpu.ram[0xFFFF],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::MW_RX,
+        |cpu| assert!(
+            0xFFFF == cpu.ram[0xFFFF],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::MW_RY,
+        |cpu| assert!(
+            0xFFFF == cpu.ram[0xFFFF],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::MW_RZ,
+        |cpu| assert!(
+            0xFFFF == cpu.ram[0xFFFF],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::MW_RI,
+        |cpu| assert!(
+            0xFFFF == cpu.ram[0xFFFF],
+            "assert failed"
+        )
+    );
+
+    test_set_for_operator(
+        Operator::MW_RJ,
+        |cpu| assert!(
+            0xFFFF == cpu.ram[0xFFFF],
             "assert failed"
         )
     );
