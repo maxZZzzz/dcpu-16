@@ -264,7 +264,26 @@ impl DCPU {
                 Opcode::MLI => self.ex_op_mli(param_a, param_b),
                 Opcode::DIV => self.ex_op_div(param_a, param_b),
                 Opcode::DVI => self.ex_op_dvi(param_a, param_b),
-                _ => return false,
+                Opcode::MOD => self.ex_op_mod(param_a, param_b),
+                Opcode::MDI => self.ex_op_mdi(param_a, param_b),
+                Opcode::AND => self.ex_op_and(param_a, param_b),
+                Opcode::BOR => self.ex_op_bor(param_a, param_b),
+                Opcode::XOR => self.ex_op_xor(param_a, param_b),
+                Opcode::SHR => self.ex_op_shr(param_a, param_b),
+                Opcode::ASR => self.ex_op_asr(param_a, param_b),
+                Opcode::SHL => self.ex_op_shl(param_a, param_b),
+                Opcode::IFB => self.ex_op_ifb(param_a, param_b),
+                Opcode::IFC => self.ex_op_ifc(param_a, param_b),
+                Opcode::IFE => self.ex_op_ife(param_a, param_b),
+                Opcode::IFN => self.ex_op_ifn(param_a, param_b),
+                Opcode::IFG => self.ex_op_ifg(param_a, param_b),
+                Opcode::IFA => self.ex_op_ifa(param_a, param_b),
+                Opcode::IFL => self.ex_op_ifl(param_a, param_b),
+                Opcode::IFU => self.ex_op_ifu(param_a, param_b),
+                Opcode::ADX => self.ex_op_adx(param_a, param_b),
+                Opcode::SBX => self.ex_op_sbx(param_a, param_b),
+                Opcode::STI => self.ex_op_sti(param_a, param_b),
+                Opcode::STD => self.ex_op_std(param_a, param_b),
             },
         }
 
@@ -286,14 +305,13 @@ impl DCPU {
         let result = value_b + value_a;
         let ex = ((result & 0xFFFF0000) > 0) as u16;
 
-        self.special_register[2] = ex;
-
+        self.set_by_operator(Operator::EX as u16, ex);
         self.set_by_operator(param_b, (result & 0xFFFF) as u16);
     }
 
     //FIXME: that is probably wrong
     fn ex_op_sub(&mut self, param_a : u16, param_b : u16) {
-        debug!("ex_op_set");
+        debug!("ex_op_sub");
         let value_a = self.get_by_operator(param_a) as u32;
         let value_b = self.get_by_operator(param_b) as u32;
 
@@ -306,7 +324,7 @@ impl DCPU {
     }
 
     fn ex_op_mul(&mut self, param_a : u16, param_b : u16) {
-        debug!("ex_op_set");
+        debug!("ex_op_mul");
         let value_a = self.get_by_operator(param_a) as u32;
         let value_b = self.get_by_operator(param_b) as u32;
 
@@ -318,7 +336,7 @@ impl DCPU {
     }
 
     fn ex_op_mli(&mut self, param_a : u16, param_b : u16) {
-        debug!("ex_op_set");
+        debug!("ex_op_mli");
         let value_a = self.get_by_operator(param_a) as i32;
         let value_b = self.get_by_operator(param_b) as i32;
 
@@ -330,7 +348,7 @@ impl DCPU {
     }
 
     fn ex_op_div(&mut self, param_a : u16, param_b : u16) {
-        debug!("ex_op_set");
+        debug!("ex_op_div");
         let value_a = self.get_by_operator(param_a) as u32;
         let value_b = self.get_by_operator(param_b) as u32;
 
@@ -342,7 +360,7 @@ impl DCPU {
     }
 
     fn ex_op_dvi(&mut self, param_a : u16, param_b : u16) {
-        debug!("ex_op_set");
+        debug!("ex_op_dvi");
         let value_a = self.get_by_operator(param_a) as u32;
         let value_b = self.get_by_operator(param_b) as u32;
 
@@ -351,6 +369,123 @@ impl DCPU {
 
         self.special_register[2] = ex;
         self.set_by_operator(param_b, (result & 0xFFFF) as u16);
+    }
+    
+
+    fn ex_op_mod (&mut self, param_a : u16, param_b : u16) {
+        let value_a = self.get_by_operator(param_a);
+        let value_b = self.get_by_operator(param_a);
+
+        let result = value_b % value_a;
+
+        self.set_by_operator(param_b, result);
+    }
+
+    fn ex_op_mdi (&mut self, param_a : u16, param_b : u16) {
+        let value_a = self.get_by_operator(param_a) as i16;
+        let value_b = self.get_by_operator(param_a) as i16;
+
+        let result = value_b % value_a;
+
+        self.set_by_operator(param_b, result as u16);
+    }
+
+    fn ex_op_and (&mut self, param_a : u16, param_b : u16) {
+        let value_a = self.get_by_operator(param_a);
+        let value_b = self.get_by_operator(param_a);
+
+        let result = value_b & value_a;
+
+        self.set_by_operator(param_b, result);
+    }
+
+    fn ex_op_bor (&mut self, param_a : u16, param_b : u16) {
+        let value_a = self.get_by_operator(param_a);
+        let value_b = self.get_by_operator(param_a);
+
+        let result = value_b | value_a;
+
+        self.set_by_operator(param_b, result);
+    }
+
+    fn ex_op_xor (&mut self, param_a : u16, param_b : u16) {
+        let value_a = self.get_by_operator(param_a);
+        let value_b = self.get_by_operator(param_a);
+
+        let result = value_b ^ value_a;
+
+        self.set_by_operator(param_b, result);
+    }
+
+    fn ex_op_shr (&mut self, param_a : u16, param_b : u16) {
+        let value_a = self.get_by_operator(param_a) as u32;
+        let value_b = self.get_by_operator(param_a) as u32;
+
+        let result = value_b >> value_a;
+        let ex = ((value_b << 16) >> value_a) & 0xFFFF;
+
+        self.set_by_operator(Operator::EX as u16, ex as u16);
+        self.set_by_operator(param_b, result as u16);
+    }
+
+    fn ex_op_asr (&mut self, param_a : u16, param_b : u16) {
+        // FIXME: the sign may have to be exapnded here properly
+        let value_a = self.get_by_operator(param_a) as i32;
+        let value_b = self.get_by_operator(param_a) as i32;
+
+        let result = value_b >> value_a;
+        let ex = ((value_b << 16) >> value_a) & 0xFFFF;
+
+        self.set_by_operator(Operator::EX as u16, ex as u16);
+        self.set_by_operator(param_b, result as u16 as u16);
+    }
+
+    fn ex_op_shl (&mut self, param_a : u16, param_b : u16) {
+        let value_a = self.get_by_operator(param_a) as u32;
+        let value_b = self.get_by_operator(param_a) as u32;
+
+        let ca = (value_b << value_a);
+        let ex = (ca >> 16) & 0xFFFF;
+        let result = ca & 0xFFFF;
+
+        self.set_by_operator(Operator::EX as u16, ex as u16);
+        self.set_by_operator(param_b, result as u16);
+    }
+
+    fn ex_op_ifb (&mut self, param_a : u16, param_b : u16) {
+    }
+
+    fn ex_op_ifc (&mut self, param_a : u16, param_b : u16) {
+    }
+
+    fn ex_op_ife (&mut self, param_a : u16, param_b : u16) {
+    }
+
+    fn ex_op_ifn (&mut self, param_a : u16, param_b : u16) {
+    }
+
+    fn ex_op_ifg (&mut self, param_a : u16, param_b : u16) {
+    }
+
+    fn ex_op_ifa (&mut self, param_a : u16, param_b : u16) {
+    }
+
+    fn ex_op_ifl (&mut self, param_a : u16, param_b : u16) {
+    }
+
+    fn ex_op_ifu (&mut self, param_a : u16, param_b : u16) {
+    }
+
+    fn ex_op_adx (&mut self, param_a : u16, param_b : u16) {
+    }
+
+    fn ex_op_sbx (&mut self, param_a : u16, param_b : u16) {
+    }
+
+    fn ex_op_sti (&mut self, param_a : u16, param_b : u16) {
+    }
+
+    fn ex_op_std (&mut self, param_a : u16, param_b : u16) {
     }
 
     pub fn cycle(&mut self) {
