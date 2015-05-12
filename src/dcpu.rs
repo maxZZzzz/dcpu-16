@@ -1,10 +1,7 @@
-use self::core::num::FromPrimitive;
-
 extern crate core;
 
 #[allow(non_camel_case_types)]
 
-#[derive(FromPrimitive)]
 #[repr(u16)]
 pub enum Operator {
     RA = 0x00,
@@ -46,7 +43,7 @@ pub enum Operator {
     NW = 0x1F,
 }
 
-#[derive(FromPrimitive)]
+
 #[repr(u16)]
 pub enum Opcode {
     SET = 0x01,
@@ -78,7 +75,41 @@ pub enum Opcode {
     STD = 0x1F,
 }
 
-#[derive(FromPrimitive)]
+impl Opcode {
+    pub fn from_u16(opcode : u16) -> Option<Self> {
+        match opcode {
+            0x01 => Some(Opcode::SET),
+            0x02 => Some(Opcode::ADD),
+            0x03 => Some(Opcode::SUB),
+            0x04 => Some(Opcode::MUL),
+            0x05 => Some(Opcode::MLI),
+            0x06 => Some(Opcode::DIV),
+            0x07 => Some(Opcode::DVI),
+            0x08 => Some(Opcode::MOD),
+            0x09 => Some(Opcode::MDI),
+            0x0A => Some(Opcode::AND),
+            0x0B => Some(Opcode::BOR),
+            0x0C => Some(Opcode::XOR),
+            0x0D => Some(Opcode::SHR),
+            0x0E => Some(Opcode::ASR),
+            0x0F => Some(Opcode::SHL),
+            0x10 => Some(Opcode::IFB),
+            0x11 => Some(Opcode::IFC),
+            0x12 => Some(Opcode::IFE),
+            0x13 => Some(Opcode::IFN),
+            0x14 => Some(Opcode::IFG),
+            0x15 => Some(Opcode::IFA),
+            0x16 => Some(Opcode::IFL),
+            0x17 => Some(Opcode::IFU),
+            0x1A => Some(Opcode::ADX),
+            0x1B => Some(Opcode::SBX),
+            0x1E => Some(Opcode::STI),
+            0x1F => Some(Opcode::STD),
+            _ => None
+        }
+    }
+}
+
 #[repr(u16)]
 pub enum SpecialOpcode {
     JSR = 0x01,
